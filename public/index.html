@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Void Drifter</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a1a;
+  color: #c8d0e0;
+  font-family: 'Courier New', monospace;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+h1 {
+  margin: 18px 0 4px;
+  font-size: 28px;
+  letter-spacing: 6px;
+  color: #7ec8e3;
+  text-transform: uppercase;
+}
+.subtitle {
+  font-size: 12px;
+  color: #556;
+  margin-bottom: 10px;
+  letter-spacing: 2px;
+}
+#game-wrap {
+  position: relative;
+  border: 2px solid #1a2a3a;
+  border-radius: 4px;
+  background: #000;
+}
+canvas { display: block; }
+#hud {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  pointer-events: none;
+  text-shadow: 0 0 6px #000;
+}
+#hud span { color: #7ec8e3; }
+#hud .crystals { color: #e8c547; }
+#overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 4, 20, 0.88);
+  z-index: 10;
+}
+#overlay.hidden { display: none; }
+#overlay h2 {
+  font-size: 24px;
+  color: #e05050;
+  margin-bottom: 8px;
+  letter-spacing: 3px;
+}
+#overlay .final-score {
+  font-size: 36px;
+  color: #7ec8e3;
+  margin-bottom: 4px;
+}
+#overlay .details {
+  font-size: 13px;
+  color: #889;
+  margin-bottom: 16px;
+}
+#overlay .start-title {
+  font-size: 22px;
+  color: #7ec8e3;
+  margin-bottom: 6px;
+}
+#overlay .instructions {
+  font-size: 13px;
+  color: #99a;
+  line-height: 1.6;
+  text-align: center;
+  max-width: 340px;
+  margin-bottom: 18px;
+}
+#name-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+#name-form.hidden { display: none; }
+#name-input {
+  background: #111;
+  border: 1px solid #334;
+  color: #c8d0e0;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 14px;
+  border-radius: 3px;
+  width: 140px;
+}
+#name-input:focus { outline: 1px solid #7ec8e3; border-color: #7ec8e3; }
+.btn {
+  background: #1a3050;
+  color: #7ec8e3;
+  border: 1px solid #2a4a6a;
+  padding: 6px 16px;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 3px;
+  letter-spacing: 1px;
+}
+.btn:hover { background: #244060; }
+.btn:disabled { opacity: 0.4; cursor: default; }
+#save-msg {
+  font-size: 12px;
+  height: 16px;
+  margin-bottom: 8px;
+}
+#save-msg.error { color: #e05050; }
+#save-msg.ok { color: #50c878; }
+#play-btn {
+  margin-top: 4px;
+  font-size: 16px;
+  padding: 8px 28px;
+}
+#scoreboard {
+  margin: 16px 0 24px;
+  width: 480px;
+  max-width: 95vw;
+}
+#scoreboard h3 {
+  text-align: center;
+  color: #7ec8e3;
+  font-size: 15px;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+#scoreboard table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+#scoreboard th {
+  color: #556;
+  text-align: left;
+  padding: 4px 8px;
+  border-bottom: 1px solid #1a2a3a;
+  font-weight: normal;
+  letter-spacing: 1px;
+}
+#scoreboard td {
+  padding: 3px 8px;
+  border-bottom: 1px solid #0d1520;
+}
+#scoreboard tr:nth-child(1) td { color: #e8c547; }
+#scoreboard tr:nth-child(2) td { color: #c0c0c0; }
+#scoreboard tr:nth-child(3) td { color: #b87333; }
+</style>
+</head>
+<body>
+<h1>Void Drifter</h1>
+<p class="subtitle">Navigate the asteroid field &bull; Collect crystals &bull; Survive</p>
+
+<div id="game-wrap">
+  <canvas id="canvas" width="480" height="520"></canvas>
+  <div id="hud">
+    <span>SCORE: <b id="hud-score">0</b></span>
+    <span class="crystals">CRYSTALS: <b id="hud-crystals">0</b></span>
+    <span>TIME: <b id="hud-time">0.0s</b></span>
+  </div>
+  <div id="overlay">
+    <div id="start-screen">
+      <div class="start-title">VOID DRIFTER</div>
+      <div class="instructions">
+        Arrow keys or WASD to move your ship.<br>
+        Dodge asteroids. Collect yellow crystals.<br>
+        Each crystal = 100 pts. Survival = 10 pts/sec.<br>
+        One hit ends the run.
+      </div>
+      <button class="btn" id="play-btn">LAUNCH</button>
+    </div>
+    <div id="end-screen" class="hidden">
+      <h2>HULL BREACH</h2>
+      <div class="final-score" id="final-score">0</div>
+      <div class="details" id="final-details"></div>
+      <form id="name-form" autocomplete="off">
+        <input id="name-input" type="text" maxlength="20" placeholder="Your callsign" aria-label="Player name">
+        <button class="btn" type="submit" id="save-btn">SAVE</button>
+      </form>
+      <div id="save-msg"></div>
+      <button class="btn" id="play-btn-2">DRIFT AGAIN</button>
+    </div>
+  </div>
+</div>
+
+<div id="scoreboard">
+  <h3>HIGH SCORES</h3>
+  <table>
+    <thead><tr><th>#</th><th>CALLSIGN</th><th>SCORE</th><th>CRYSTALS</th><th>TIME</th></tr></thead>
+    <tbody id="score-rows"></tbody>
+  </table>
+</div>
+
+<script>
+(function() {
+"use strict";
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const W = canvas.width, H = canvas.height;
+
+const overlay = document.getElementById("overlay");
+const startScreen = document.getElementById("start-screen");
+const endScreen = document.getElementById("end-screen");
+const hudScore = document.getElementById("hud-score");
+const hudCrystals = document.getElementById("hud-crystals");
+const hudTime = document.getElementById("hud-time");
+const finalScoreEl = document.getElementById("final-score");
+const finalDetails = document.getElementById("final-details");
+const nameForm = document.getElementById("name-form");
+const nameInput = document.getElementById("name-input");
+const saveBtn = document.getElementById("save-btn");
+const saveMsg = document.getElementById("save-msg");
+const scoreRows = document.getElementById("score-rows");
+
+const keys = {};
+let gameState = "menu"; // menu | playing | dead
+let ship = {}, asteroids = [], crystals = [], particles = [], stars = [];
+let score, crystalCount, startTime, elapsed, animId;
+let saving = false;
+let saved = false;
+
+function initStars() {
+  stars = [];
+  for (let i = 0; i < 80; i++) {
+    stars.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      s: Math.random() * 1.5 + 0.3,
+      v: Math.random() * 30 + 10
+    });
+  }
+}
+initStars();
+
+function resetGame() {
+  ship = { x: W / 2, y: H - 80, w: 20, h: 24, speed: 220 };
+  asteroids = [];
+  crystals = [];
+  particles = [];
+  score = 0;
+  crystalCount = 0;
+  elapsed = 0;
+  saving = false;
+  saved = false;
+  saveMsg.textContent = "";
+  saveMsg.className = "";
+}
+
+function spawnAsteroid(dt, t) {
+  const rate = 1.2 + t * 0.15;
+  if (Math.random() < rate * dt) {
+    const r = 12 + Math.random() * 22;
+    asteroids.push({
+      x: Math.random() * (W - 2 * r) + r,
+      y: -r,
+      r: r,
+      vy: 80 + Math.random() * 120 + t * 8,
+      vx: (Math.random() - 0.5) * 60,
+      rot: Math.random() * Math.PI * 2,
+      rv: (Math.random() - 0.5) * 3,
+      verts: makeAsteroidVerts(r)
+    });
+  }
+}
+
+function makeAsteroidVerts(r) {
+  const n = 7 + Math.floor(Math.random() * 4);
+  const verts = [];
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    const d = r * (0.7 + Math.random() * 0.5);
+    verts.push({ a, d });
+  }
+  return verts;
+}
+
+function spawnCrystal(dt, t) {
+  const rate = 0.35 + t * 0.02;
+  if (Math.random() < rate * dt) {
+    crystals.push({
+      x: 20 + Math.random() * (W - 40),
+      y: -10,
+      vy: 60 + Math.random() * 50,
+      pulse: Math.random() * Math.PI * 2
+    });
+  }
+}
+
+function spawnParticles(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const v = 40 + Math.random() * 120;
+    particles.push({
+      x, y,
+      vx: Math.cos(a) * v,
+      vy: Math.sin(a) * v,
+      life: 0.3 + Math.random() * 0.5,
+      maxLife: 0.3 + Math.random() * 0.5,
+      color
+    });
+  }
+}
+
+function circRect(cx, cy, cr, rx, ry, rw, rh) {
+  const dx = Math.abs(cx - (rx + rw / 2));
+  const dy = Math.abs(cy - (ry + rh / 2));
+  if (dx > rw / 2 + cr || dy > rh / 2 + cr) return false;
+  if (dx <= rw / 2 || dy <= rh / 2) return true;
+  const ex = dx - rw / 2, ey = dy - rh / 2;
+  return ex * ex + ey * ey <= cr * cr;
+}
+
+function dist(ax, ay, bx, by) {
+  const dx = ax - bx, dy = ay - by;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function update(dt) {
+  const t = elapsed;
+  elapsed += dt;
+
+  // ship movement
+  let mx = 0, my = 0;
+  if (keys["ArrowLeft"] || keys["KeyA"]) mx = -1;
+  if (keys["ArrowRight"] || keys["KeyD"]) mx = 1;
+  if (keys["ArrowUp"] || keys["KeyW"]) my = -1;
+  if (keys["ArrowDown"] || keys["KeyS"]) my = 1;
+  if (mx && my) { mx *= 0.707; my *= 0.707; }
+  ship.x += mx * ship.speed * dt;
+  ship.y += my * ship.speed * dt;
+  ship.x = Math.max(ship.w / 2, Math.min(W - ship.w / 2, ship.x));
+  ship.y = Math.max(ship.h / 2, Math.min(H - ship.h / 2, ship.y));
+
+  // spawn
+  spawnAsteroid(dt, t);
+  spawnCrystal(dt, t);
+
+  // move asteroids
+  for (let i = asteroids.length - 1; i >= 0; i--) {
+    const a = asteroids[i];
+    a.x += a.vx * dt;
+    a.y += a.vy * dt;
+    a.rot += a.rv * dt;
+    if (a.y - a.r > H || a.x + a.r < 0 || a.x - a.r > W) {
+      asteroids.splice(i, 1);
+      continue;
+    }
+    if (circRect(a.x, a.y, a.r * 0.7, ship.x - ship.w / 2, ship.y - ship.h / 2, ship.w, ship.h)) {
+      spawnParticles(ship.x, ship.y, "#e05050", 30);
+      spawnParticles(a.x, a.y, "#888", 15);
+      gameState = "dead";
+      score = computeScore();
+      showDeath();
+      return;
+    }
+  }
+
+  // move crystals
+  for (let i = crystals.length - 1; i >= 0; i--) {
+    const c = crystals[i];
+    c.y += c.vy * dt;
+    c.pulse += dt * 5;
+    if (c.y > H + 10) { crystals.splice(i, 1); continue; }
+    if (dist(c.x, c.y, ship.x, ship.y) < 18) {
+      crystalCount++;
+      spawnParticles(c.x, c.y, "#e8c547", 8);
+      crystals.splice(i, 1);
+    }
+  }
+
+  // particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  // stars
+  for (const s of stars) {
+    s.y += s.v * dt;
+    if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
+  }
+
+  score = computeScore();
+  hudScore.textContent = score;
+  hudCrystals.textContent = crystalCount;
+  hudTime.textContent = elapsed.toFixed(1) + "s";
+}
+
+function computeScore() {
+  return Math.floor(elapsed * 10) + crystalCount * 100;
+}
+
+function draw() {
+  ctx.fillStyle = "#06060f";
+  ctx.fillRect(0, 0, W, H);
+
+  // stars
+  for (const s of stars) {
+    const a = s.s / 1.8;
+    ctx.fillStyle = `rgba(180,200,230,${a})`;
+    ctx.fillRect(s.x, s.y, s.s, s.s);
+  }
+
+  // crystals
+  for (const c of crystals) {
+    const glow = 0.6 + 0.4 * Math.sin(c.pulse);
+    ctx.save();
+    ctx.translate(c.x, c.y);
+    ctx.rotate(c.pulse * 0.3);
+    ctx.beginPath();
+    ctx.moveTo(0, -8);
+    ctx.lineTo(6, 0);
+    ctx.lineTo(0, 8);
+    ctx.lineTo(-6, 0);
+    ctx.closePath();
+    ctx.fillStyle = `rgba(232,197,71,${glow})`;
+    ctx.fill();
+    ctx.strokeStyle = "#e8c547";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // asteroids
+  for (const a of asteroids) {
+    ctx.save();
+    ctx.translate(a.x, a.y);
+    ctx.rotate(a.rot);
+    ctx.beginPath();
+    for (let i = 0; i < a.verts.length; i++) {
+      const v = a.verts[i];
+      const px = Math.cos(v.a) * v.d;
+      const py = Math.sin(v.a) * v.d;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = "#2a2a35";
+    ctx.fill();
+    ctx.strokeStyle = "#4a4a58";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ship
+  if (gameState === "playing") {
+    ctx.save();
+    ctx.translate(ship.x, ship.y);
+    ctx.beginPath();
+    ctx.moveTo(0, -ship.h / 2);
+    ctx.lineTo(-ship.w / 2, ship.h / 2);
+    ctx.lineTo(0, ship.h / 2 - 6);
+    ctx.lineTo(ship.w / 2, ship.h / 2);
+    ctx.closePath();
+    ctx.fillStyle = "#3a7ec8";
+    ctx.fill();
+    ctx.strokeStyle = "#7ec8e3";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // engine glow
+    const f = 3 + Math.random() * 4;
+    ctx.beginPath();
+    ctx.moveTo(-5, ship.h / 2 - 2);
+    ctx.lineTo(0, ship.h / 2 + f);
+    ctx.lineTo(5, ship.h / 2 - 2);
+    ctx.fillStyle = `rgba(126,200,227,${0.5 + Math.random() * 0.3})`;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // particles
+  for (const p of particles) {
+    const a = p.life / p.maxLife;
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = a;
+    ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function loop(last) {
+  if (gameState !== "playing") return;
+  const now = performance.now();
+  const dt = Math.min((now - last) / 1000, 0.05);
+  update(dt);
+  draw();
+  animId = requestAnimationFrame(() => loop(now));
+}
+
+function startGame() {
+  resetGame();
+  overlay.classList.add("hidden");
+  gameState = "playing";
+  draw();
+  loop(performance.now());
+}
+
+function showDeath() {
+  cancelAnimationFrame(animId);
+  draw();
+  endScreen.classList.remove("hidden");
+  startScreen.classList.add("hidden");
+  overlay.classList.remove("hidden");
+  finalScoreEl.textContent = score;
+  finalDetails.textContent = `${crystalCount} crystals · ${elapsed.toFixed(1)}s survived`;
+  nameForm.classList.remove("hidden");
+  saveBtn.disabled = false;
+  loadScores();
+}
+
+function showMenu() {
+  startScreen.classList.remove("hidden");
+  endScreen.classList.add("hidden");
+  overlay.classList.remove("hidden");
+  draw();
+  loadScores();
+}
+
+// API helpers — resolve relative to the page's own directory
+function apiBase() {
+  const loc = window.location.pathname;
+  const dir = loc.endsWith("/") ? loc : loc.substring(0, loc.lastIndexOf("/") + 1);
+  return dir;
+}
+
+async function loadScores() {
+  try {
+    const res = await fetch(apiBase() + "scores");
+    if (!res.ok) return;
+    const data = await res.json();
+    renderScores(data);
+  } catch (_) {}
+}
+
+function renderScores(data) {
+  scoreRows.innerHTML = "";
+  if (!data.length) {
+    scoreRows.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#445">No scores yet</td></tr>';
+    return;
+  }
+  data.forEach((row, i) => {
+    const tr = document.createElement("tr");
+    const ms = row.survived_ms;
+    const sec = (ms / 1000).toFixed(1);
+    tr.innerHTML = `<td>${i + 1}</td><td>${esc(row.name)}</td><td>${row.score}</td><td>${row.crystals}</td><td>${sec}s</td>`;
+    scoreRows.appendChild(tr);
+  });
+}
+
+function esc(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+nameForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (saving || saved) return;
+  const name = nameInput.value.trim();
+  if (!name) {
+    saveMsg.textContent = "Enter a callsign";
+    saveMsg.className = "error";
+    return;
+  }
+  saving = true;
+  saveBtn.disabled = true;
+  saveMsg.textContent = "Saving...";
+  saveMsg.className = "";
+
+  try {
+    const res = await fetch(apiBase() + "scores", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        score,
+        crystals: crystalCount,
+        survived_ms: Math.round(elapsed * 1000)
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: "Save failed" }));
+      throw new Error(err.error || "Save failed");
+    }
+    saved = true;
+    saveMsg.textContent = "Score saved!";
+    saveMsg.className = "ok";
+    nameForm.classList.add("hidden");
+    loadScores();
+  } catch (err) {
+    saveMsg.textContent = err.message;
+    saveMsg.className = "error";
+    saving = false;
+    saveBtn.disabled = false;
+  }
+});
+
+document.getElementById("play-btn").addEventListener("click", startGame);
+document.getElementById("play-btn-2").addEventListener("click", startGame);
+
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT" || e.target.isContentEditable) return;
+  keys[e.code] = true;
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) {
+    e.preventDefault();
+  }
+});
+document.addEventListener("keyup", (e) => {
+  keys[e.code] = false;
+});
+
+showMenu();
+})();
+</script>
+</body>
+</html>
