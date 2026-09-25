@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stellar Drift</title>
+<title>Void Drifter</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   background: #0a0a1a;
-  color: #e0e0ff;
+  color: #c8d0e0;
   font-family: 'Courier New', monospace;
   display: flex;
   flex-direction: column;
@@ -17,562 +17,622 @@ body {
   overflow-x: hidden;
 }
 h1 {
-  font-size: 2rem;
-  margin: 12px 0 4px;
-  color: #7df9ff;
-  text-shadow: 0 0 20px rgba(125,249,255,0.5);
-  letter-spacing: 4px;
+  margin: 18px 0 4px;
+  font-size: 28px;
+  letter-spacing: 6px;
+  color: #7ec8e3;
+  text-transform: uppercase;
 }
 .subtitle {
-  font-size: 0.75rem;
-  color: #667;
-  margin-bottom: 8px;
-}
-#game-area {
-  position: relative;
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  justify-content: center;
-  padding: 0 8px;
-}
-canvas {
-  border: 1px solid #223;
-  border-radius: 4px;
-  display: block;
-  background: #06060f;
-}
-#sidebar {
-  width: 240px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.panel {
-  background: rgba(15,15,35,0.9);
-  border: 1px solid #223;
-  border-radius: 6px;
-  padding: 12px;
-}
-.panel h2 {
-  font-size: 0.85rem;
-  color: #7df9ff;
-  margin-bottom: 8px;
+  font-size: 12px;
+  color: #556;
+  margin-bottom: 10px;
   letter-spacing: 2px;
 }
-.stat-row {
+#game-wrap {
+  position: relative;
+  border: 2px solid #1a2a3a;
+  border-radius: 4px;
+  background: #000;
+}
+canvas { display: block; }
+#hud {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  right: 12px;
   display: flex;
   justify-content: space-between;
-  font-size: 0.8rem;
-  padding: 2px 0;
+  font-size: 14px;
+  pointer-events: none;
+  text-shadow: 0 0 6px #000;
 }
-.stat-val { color: #ffd700; }
-#score-list {
-  list-style: none;
-  font-size: 0.75rem;
-}
-#score-list li {
-  display: flex;
-  justify-content: space-between;
-  padding: 3px 0;
-  border-bottom: 1px solid #1a1a30;
-}
-#score-list li .rank { color: #556; width: 20px; }
-#score-list li .sname { color: #aaf; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#score-list li .sval { color: #ffd700; margin-left: 8px; }
-
+#hud span { color: #7ec8e3; }
+#hud .crystals { color: #e8c547; }
 #overlay {
   position: absolute;
-  top: 0; left: 0;
-  width: 480px; height: 600px;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(6,6,15,0.92);
-  border-radius: 4px;
+  background: rgba(4, 4, 20, 0.88);
   z-index: 10;
 }
 #overlay.hidden { display: none; }
 #overlay h2 {
-  font-size: 1.5rem;
-  color: #7df9ff;
-  margin-bottom: 16px;
-  text-shadow: 0 0 12px rgba(125,249,255,0.4);
+  font-size: 24px;
+  color: #e05050;
+  margin-bottom: 8px;
+  letter-spacing: 3px;
 }
 #overlay .final-score {
-  font-size: 2rem;
-  color: #ffd700;
-  margin-bottom: 6px;
+  font-size: 36px;
+  color: #7ec8e3;
+  margin-bottom: 4px;
 }
-#overlay .final-detail {
-  font-size: 0.8rem;
-  color: #99a;
+#overlay .details {
+  font-size: 13px;
+  color: #889;
   margin-bottom: 16px;
 }
-#overlay input {
-  background: #111;
-  border: 1px solid #334;
-  color: #eef;
-  font-family: inherit;
-  font-size: 1rem;
-  padding: 8px 12px;
-  border-radius: 4px;
-  width: 200px;
+#overlay .start-title {
+  font-size: 22px;
+  color: #7ec8e3;
+  margin-bottom: 6px;
+}
+#overlay .instructions {
+  font-size: 13px;
+  color: #99a;
+  line-height: 1.6;
   text-align: center;
+  max-width: 340px;
+  margin-bottom: 18px;
+}
+#name-form {
+  display: flex;
+  gap: 8px;
   margin-bottom: 10px;
 }
-#overlay input:focus { outline: none; border-color: #7df9ff; }
-#overlay .btn {
-  background: #1a1a3a;
-  color: #7df9ff;
+#name-form.hidden { display: none; }
+#name-input {
+  background: #111;
   border: 1px solid #334;
-  padding: 8px 24px;
+  color: #c8d0e0;
+  padding: 6px 10px;
   font-family: inherit;
-  font-size: 0.9rem;
-  border-radius: 4px;
+  font-size: 14px;
+  border-radius: 3px;
+  width: 140px;
+}
+#name-input:focus { outline: 1px solid #7ec8e3; border-color: #7ec8e3; }
+.btn {
+  background: #1a3050;
+  color: #7ec8e3;
+  border: 1px solid #2a4a6a;
+  padding: 6px 16px;
+  font-family: inherit;
+  font-size: 14px;
   cursor: pointer;
-  margin: 4px;
+  border-radius: 3px;
   letter-spacing: 1px;
 }
-#overlay .btn:hover { background: #252550; }
-#overlay .btn:disabled { opacity: 0.4; cursor: default; }
-#overlay .btn-row { display: flex; gap: 8px; margin-top: 4px; }
-#overlay .error-msg { color: #f66; font-size: 0.8rem; min-height: 1.2em; margin-top: 4px; }
-#overlay .start-help {
-  font-size: 0.75rem;
-  color: #667;
-  margin-top: 20px;
-  text-align: center;
-  line-height: 1.6;
+.btn:hover { background: #244060; }
+.btn:disabled { opacity: 0.4; cursor: default; }
+#save-msg {
+  font-size: 12px;
+  height: 16px;
+  margin-bottom: 8px;
 }
+#save-msg.error { color: #e05050; }
+#save-msg.ok { color: #50c878; }
+#play-btn {
+  margin-top: 4px;
+  font-size: 16px;
+  padding: 8px 28px;
+}
+#scoreboard {
+  margin: 16px 0 24px;
+  width: 480px;
+  max-width: 95vw;
+}
+#scoreboard h3 {
+  text-align: center;
+  color: #7ec8e3;
+  font-size: 15px;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+#scoreboard table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+#scoreboard th {
+  color: #556;
+  text-align: left;
+  padding: 4px 8px;
+  border-bottom: 1px solid #1a2a3a;
+  font-weight: normal;
+  letter-spacing: 1px;
+}
+#scoreboard td {
+  padding: 3px 8px;
+  border-bottom: 1px solid #0d1520;
+}
+#scoreboard tr:nth-child(1) td { color: #e8c547; }
+#scoreboard tr:nth-child(2) td { color: #c0c0c0; }
+#scoreboard tr:nth-child(3) td { color: #b87333; }
 </style>
 </head>
 <body>
-<h1>STELLAR DRIFT</h1>
-<p class="subtitle">dodge the debris &middot; chase the near-miss</p>
-<div id="game-area">
-  <canvas id="c" width="480" height="600"></canvas>
-  <div id="sidebar">
-    <div class="panel">
-      <h2>CURRENT RUN</h2>
-      <div class="stat-row"><span>Score</span><span class="stat-val" id="hud-score">0</span></div>
-      <div class="stat-row"><span>Near misses</span><span class="stat-val" id="hud-misses">0</span></div>
-      <div class="stat-row"><span>Time</span><span class="stat-val" id="hud-time">0.0s</span></div>
-    </div>
-    <div class="panel">
-      <h2>HOW TO PLAY</h2>
-      <p style="font-size:0.7rem;color:#99a;line-height:1.5;">
-        Move your ship left/right to dodge falling asteroids.<br><br>
-        <b style="color:#aaf;">Arrow keys</b> or <b style="color:#aaf;">A/D</b> to move.<br><br>
-        <b style="color:#ffd700;">+10 pts/sec</b> for surviving.<br>
-        <b style="color:#ff6060;">+50 pts</b> per near-miss (asteroid passes within one ship-width).
-        <br><br>Difficulty increases over time. One hit ends the run.
-      </p>
-    </div>
-    <div class="panel">
-      <h2>HIGH SCORES</h2>
-      <ul id="score-list"><li style="color:#556">Loading...</li></ul>
-    </div>
-  </div>
+<h1>Void Drifter</h1>
+<p class="subtitle">Navigate the asteroid field &bull; Collect crystals &bull; Survive</p>
 
-  <div id="overlay">
-    <h2 id="overlay-title">STELLAR DRIFT</h2>
-    <div class="final-score hidden" id="final-score"></div>
-    <div class="final-detail hidden" id="final-detail"></div>
-    <input type="text" id="name-input" class="hidden" maxlength="20" placeholder="Enter your name">
-    <div class="btn-row">
-      <button class="btn" id="btn-start">START</button>
-      <button class="btn hidden" id="btn-save">SAVE SCORE</button>
-      <button class="btn hidden" id="btn-restart">PLAY AGAIN</button>
-    </div>
-    <div class="error-msg" id="error-msg"></div>
-    <div class="start-help" id="start-help">Arrow keys or A/D to move &middot; dodge everything</div>
+<div id="game-wrap">
+  <canvas id="canvas" width="480" height="520"></canvas>
+  <div id="hud">
+    <span>SCORE: <b id="hud-score">0</b></span>
+    <span class="crystals">CRYSTALS: <b id="hud-crystals">0</b></span>
+    <span>TIME: <b id="hud-time">0.0s</b></span>
   </div>
+  <div id="overlay">
+    <div id="start-screen">
+      <div class="start-title">VOID DRIFTER</div>
+      <div class="instructions">
+        Arrow keys or WASD to move your ship.<br>
+        Dodge asteroids. Collect yellow crystals.<br>
+        Each crystal = 100 pts. Survival = 10 pts/sec.<br>
+        One hit ends the run.
+      </div>
+      <button class="btn" id="play-btn">LAUNCH</button>
+    </div>
+    <div id="end-screen" class="hidden">
+      <h2>HULL BREACH</h2>
+      <div class="final-score" id="final-score">0</div>
+      <div class="details" id="final-details"></div>
+      <form id="name-form" autocomplete="off">
+        <input id="name-input" type="text" maxlength="20" placeholder="Your callsign" aria-label="Player name">
+        <button class="btn" type="submit" id="save-btn">SAVE</button>
+      </form>
+      <div id="save-msg"></div>
+      <button class="btn" id="play-btn-2">DRIFT AGAIN</button>
+    </div>
+  </div>
+</div>
+
+<div id="scoreboard">
+  <h3>HIGH SCORES</h3>
+  <table>
+    <thead><tr><th>#</th><th>CALLSIGN</th><th>SCORE</th><th>CRYSTALS</th><th>TIME</th></tr></thead>
+    <tbody id="score-rows"></tbody>
+  </table>
 </div>
 
 <script>
 (function() {
-  const canvas = document.getElementById('c');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+"use strict";
 
-  const hudScore = document.getElementById('hud-score');
-  const hudMisses = document.getElementById('hud-misses');
-  const hudTime = document.getElementById('hud-time');
-  const overlay = document.getElementById('overlay');
-  const overlayTitle = document.getElementById('overlay-title');
-  const finalScoreEl = document.getElementById('final-score');
-  const finalDetailEl = document.getElementById('final-detail');
-  const nameInput = document.getElementById('name-input');
-  const btnStart = document.getElementById('btn-start');
-  const btnSave = document.getElementById('btn-save');
-  const btnRestart = document.getElementById('btn-restart');
-  const errorMsg = document.getElementById('error-msg');
-  const startHelp = document.getElementById('start-help');
-  const scoreList = document.getElementById('score-list');
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const W = canvas.width, H = canvas.height;
 
-  const SHIP_W = 28, SHIP_H = 32;
-  const NEAR_MISS_DIST = SHIP_W * 1.5;
+const overlay = document.getElementById("overlay");
+const startScreen = document.getElementById("start-screen");
+const endScreen = document.getElementById("end-screen");
+const hudScore = document.getElementById("hud-score");
+const hudCrystals = document.getElementById("hud-crystals");
+const hudTime = document.getElementById("hud-time");
+const finalScoreEl = document.getElementById("final-score");
+const finalDetails = document.getElementById("final-details");
+const nameForm = document.getElementById("name-form");
+const nameInput = document.getElementById("name-input");
+const saveBtn = document.getElementById("save-btn");
+const saveMsg = document.getElementById("save-msg");
+const scoreRows = document.getElementById("score-rows");
 
-  let state = 'menu';
-  let ship = { x: W / 2, y: H - 60 };
-  let asteroids = [];
-  let stars = [];
-  let particles = [];
-  let score = 0;
-  let nearMisses = 0;
-  let survivalTime = 0;
-  let lastTime = 0;
-  let spawnTimer = 0;
-  let keys = {};
-  let saving = false;
-  let scoreSaved = false;
-  let nearMissFlash = 0;
+const keys = {};
+let gameState = "menu"; // menu | playing | dead
+let ship = {}, asteroids = [], crystals = [], particles = [], stars = [];
+let score, crystalCount, startTime, elapsed, animId;
+let saving = false;
+let saved = false;
 
+function initStars() {
+  stars = [];
   for (let i = 0; i < 80; i++) {
     stars.push({
       x: Math.random() * W,
       y: Math.random() * H,
-      speed: 0.2 + Math.random() * 0.6,
-      size: Math.random() < 0.3 ? 1.5 : 0.8,
-      brightness: 0.3 + Math.random() * 0.7
+      s: Math.random() * 1.5 + 0.3,
+      v: Math.random() * 30 + 10
     });
   }
+}
+initStars();
 
-  function spawnAsteroid() {
-    const size = 12 + Math.random() * 22;
-    const speedMult = 1 + survivalTime / 30;
+function resetGame() {
+  ship = { x: W / 2, y: H - 80, w: 20, h: 24, speed: 220 };
+  asteroids = [];
+  crystals = [];
+  particles = [];
+  score = 0;
+  crystalCount = 0;
+  elapsed = 0;
+  saving = false;
+  saved = false;
+  saveMsg.textContent = "";
+  saveMsg.className = "";
+}
+
+function spawnAsteroid(dt, t) {
+  const rate = 1.2 + t * 0.15;
+  if (Math.random() < rate * dt) {
+    const r = 12 + Math.random() * 22;
     asteroids.push({
-      x: Math.random() * (W - size * 2) + size,
-      y: -size,
-      size: size,
-      speed: (1.5 + Math.random() * 2) * Math.min(speedMult, 4),
-      rotation: Math.random() * Math.PI * 2,
-      rotSpeed: (Math.random() - 0.5) * 0.05,
-      vertices: generateAsteroidShape(size),
-      scored: false
+      x: Math.random() * (W - 2 * r) + r,
+      y: -r,
+      r: r,
+      vy: 80 + Math.random() * 120 + t * 8,
+      vx: (Math.random() - 0.5) * 60,
+      rot: Math.random() * Math.PI * 2,
+      rv: (Math.random() - 0.5) * 3,
+      verts: makeAsteroidVerts(r)
     });
   }
+}
 
-  function generateAsteroidShape(size) {
-    const pts = 7 + Math.floor(Math.random() * 5);
-    const verts = [];
-    for (let i = 0; i < pts; i++) {
-      const angle = (i / pts) * Math.PI * 2;
-      const r = size * (0.7 + Math.random() * 0.3);
-      verts.push({ x: Math.cos(angle) * r, y: Math.sin(angle) * r });
+function makeAsteroidVerts(r) {
+  const n = 7 + Math.floor(Math.random() * 4);
+  const verts = [];
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    const d = r * (0.7 + Math.random() * 0.5);
+    verts.push({ a, d });
+  }
+  return verts;
+}
+
+function spawnCrystal(dt, t) {
+  const rate = 0.35 + t * 0.02;
+  if (Math.random() < rate * dt) {
+    crystals.push({
+      x: 20 + Math.random() * (W - 40),
+      y: -10,
+      vy: 60 + Math.random() * 50,
+      pulse: Math.random() * Math.PI * 2
+    });
+  }
+}
+
+function spawnParticles(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const v = 40 + Math.random() * 120;
+    particles.push({
+      x, y,
+      vx: Math.cos(a) * v,
+      vy: Math.sin(a) * v,
+      life: 0.3 + Math.random() * 0.5,
+      maxLife: 0.3 + Math.random() * 0.5,
+      color
+    });
+  }
+}
+
+function circRect(cx, cy, cr, rx, ry, rw, rh) {
+  const dx = Math.abs(cx - (rx + rw / 2));
+  const dy = Math.abs(cy - (ry + rh / 2));
+  if (dx > rw / 2 + cr || dy > rh / 2 + cr) return false;
+  if (dx <= rw / 2 || dy <= rh / 2) return true;
+  const ex = dx - rw / 2, ey = dy - rh / 2;
+  return ex * ex + ey * ey <= cr * cr;
+}
+
+function dist(ax, ay, bx, by) {
+  const dx = ax - bx, dy = ay - by;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function update(dt) {
+  const t = elapsed;
+  elapsed += dt;
+
+  // ship movement
+  let mx = 0, my = 0;
+  if (keys["ArrowLeft"] || keys["KeyA"]) mx = -1;
+  if (keys["ArrowRight"] || keys["KeyD"]) mx = 1;
+  if (keys["ArrowUp"] || keys["KeyW"]) my = -1;
+  if (keys["ArrowDown"] || keys["KeyS"]) my = 1;
+  if (mx && my) { mx *= 0.707; my *= 0.707; }
+  ship.x += mx * ship.speed * dt;
+  ship.y += my * ship.speed * dt;
+  ship.x = Math.max(ship.w / 2, Math.min(W - ship.w / 2, ship.x));
+  ship.y = Math.max(ship.h / 2, Math.min(H - ship.h / 2, ship.y));
+
+  // spawn
+  spawnAsteroid(dt, t);
+  spawnCrystal(dt, t);
+
+  // move asteroids
+  for (let i = asteroids.length - 1; i >= 0; i--) {
+    const a = asteroids[i];
+    a.x += a.vx * dt;
+    a.y += a.vy * dt;
+    a.rot += a.rv * dt;
+    if (a.y - a.r > H || a.x + a.r < 0 || a.x - a.r > W) {
+      asteroids.splice(i, 1);
+      continue;
     }
-    return verts;
+    if (circRect(a.x, a.y, a.r * 0.7, ship.x - ship.w / 2, ship.y - ship.h / 2, ship.w, ship.h)) {
+      spawnParticles(ship.x, ship.y, "#e05050", 30);
+      spawnParticles(a.x, a.y, "#888", 15);
+      gameState = "dead";
+      score = computeScore();
+      showDeath();
+      return;
+    }
   }
 
-  function spawnParticles(x, y, color, count) {
-    for (let i = 0; i < count; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 1 + Math.random() * 3;
-      particles.push({
-        x, y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        life: 0.5 + Math.random() * 0.5,
-        maxLife: 0.5 + Math.random() * 0.5,
-        color,
-        size: 1 + Math.random() * 2
-      });
+  // move crystals
+  for (let i = crystals.length - 1; i >= 0; i--) {
+    const c = crystals[i];
+    c.y += c.vy * dt;
+    c.pulse += dt * 5;
+    if (c.y > H + 10) { crystals.splice(i, 1); continue; }
+    if (dist(c.x, c.y, ship.x, ship.y) < 18) {
+      crystalCount++;
+      spawnParticles(c.x, c.y, "#e8c547", 8);
+      crystals.splice(i, 1);
     }
   }
 
-  function drawShip(x, y) {
+  // particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  // stars
+  for (const s of stars) {
+    s.y += s.v * dt;
+    if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
+  }
+
+  score = computeScore();
+  hudScore.textContent = score;
+  hudCrystals.textContent = crystalCount;
+  hudTime.textContent = elapsed.toFixed(1) + "s";
+}
+
+function computeScore() {
+  return Math.floor(elapsed * 10) + crystalCount * 100;
+}
+
+function draw() {
+  ctx.fillStyle = "#06060f";
+  ctx.fillRect(0, 0, W, H);
+
+  // stars
+  for (const s of stars) {
+    const a = s.s / 1.8;
+    ctx.fillStyle = `rgba(180,200,230,${a})`;
+    ctx.fillRect(s.x, s.y, s.s, s.s);
+  }
+
+  // crystals
+  for (const c of crystals) {
+    const glow = 0.6 + 0.4 * Math.sin(c.pulse);
     ctx.save();
-    ctx.translate(x, y);
-
-    ctx.shadowColor = '#7df9ff';
-    ctx.shadowBlur = 12;
+    ctx.translate(c.x, c.y);
+    ctx.rotate(c.pulse * 0.3);
     ctx.beginPath();
-    ctx.moveTo(0, -SHIP_H / 2);
-    ctx.lineTo(-SHIP_W / 2, SHIP_H / 2);
-    ctx.lineTo(-4, SHIP_H / 3);
-    ctx.lineTo(4, SHIP_H / 3);
-    ctx.lineTo(SHIP_W / 2, SHIP_H / 2);
+    ctx.moveTo(0, -8);
+    ctx.lineTo(6, 0);
+    ctx.lineTo(0, 8);
+    ctx.lineTo(-6, 0);
     ctx.closePath();
-    ctx.fillStyle = '#1a3a5c';
+    ctx.fillStyle = `rgba(232,197,71,${glow})`;
     ctx.fill();
-    ctx.strokeStyle = '#7df9ff';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    ctx.beginPath();
-    ctx.moveTo(-3, SHIP_H / 3 + 2);
-    ctx.lineTo(0, SHIP_H / 2 + 6 + Math.random() * 4);
-    ctx.lineTo(3, SHIP_H / 3 + 2);
-    ctx.fillStyle = `rgba(255,${150 + Math.random()*100},50,0.8)`;
-    ctx.fill();
-
-    ctx.restore();
-  }
-
-  function drawAsteroid(a) {
-    ctx.save();
-    ctx.translate(a.x, a.y);
-    ctx.rotate(a.rotation);
-    ctx.beginPath();
-    ctx.moveTo(a.vertices[0].x, a.vertices[0].y);
-    for (let i = 1; i < a.vertices.length; i++) {
-      ctx.lineTo(a.vertices[i].x, a.vertices[i].y);
-    }
-    ctx.closePath();
-    ctx.fillStyle = '#2a2a3a';
-    ctx.fill();
-    ctx.strokeStyle = '#556';
+    ctx.strokeStyle = "#e8c547";
     ctx.lineWidth = 1;
     ctx.stroke();
     ctx.restore();
   }
 
-  function update(dt) {
-    if (state !== 'playing') return;
-
-    const speed = 300;
-    if (keys['ArrowLeft'] || keys['KeyA']) ship.x -= speed * dt;
-    if (keys['ArrowRight'] || keys['KeyD']) ship.x += speed * dt;
-    ship.x = Math.max(SHIP_W / 2, Math.min(W - SHIP_W / 2, ship.x));
-
-    survivalTime += dt;
-    score += 10 * dt;
-
-    spawnTimer -= dt;
-    const spawnRate = Math.max(0.15, 0.8 - survivalTime / 60);
-    if (spawnTimer <= 0) {
-      spawnAsteroid();
-      spawnTimer = spawnRate;
+  // asteroids
+  for (const a of asteroids) {
+    ctx.save();
+    ctx.translate(a.x, a.y);
+    ctx.rotate(a.rot);
+    ctx.beginPath();
+    for (let i = 0; i < a.verts.length; i++) {
+      const v = a.verts[i];
+      const px = Math.cos(v.a) * v.d;
+      const py = Math.sin(v.a) * v.d;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
     }
-
-    for (let i = asteroids.length - 1; i >= 0; i--) {
-      const a = asteroids[i];
-      a.y += a.speed;
-      a.rotation += a.rotSpeed;
-
-      const dx = a.x - ship.x;
-      const dy = a.y - ship.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const hitDist = a.size * 0.6 + SHIP_W * 0.4;
-
-      if (dist < hitDist) {
-        spawnParticles(ship.x, ship.y, '#7df9ff', 20);
-        spawnParticles(ship.x, ship.y, '#ff6040', 15);
-        endGame();
-        return;
-      }
-
-      if (!a.scored && a.y > ship.y + SHIP_H) {
-        a.scored = true;
-        if (dist < NEAR_MISS_DIST + a.size) {
-          nearMisses++;
-          score += 50;
-          nearMissFlash = 0.3;
-          spawnParticles(ship.x, ship.y - 10, '#ffd700', 6);
-        }
-      }
-
-      if (a.y > H + a.size) {
-        asteroids.splice(i, 1);
-      }
-    }
-
-    for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.life -= dt;
-      if (p.life <= 0) particles.splice(i, 1);
-    }
-
-    if (nearMissFlash > 0) nearMissFlash -= dt;
+    ctx.closePath();
+    ctx.fillStyle = "#2a2a35";
+    ctx.fill();
+    ctx.strokeStyle = "#4a4a58";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
   }
 
-  function render() {
-    ctx.fillStyle = '#06060f';
-    ctx.fillRect(0, 0, W, H);
+  // ship
+  if (gameState === "playing") {
+    ctx.save();
+    ctx.translate(ship.x, ship.y);
+    ctx.beginPath();
+    ctx.moveTo(0, -ship.h / 2);
+    ctx.lineTo(-ship.w / 2, ship.h / 2);
+    ctx.lineTo(0, ship.h / 2 - 6);
+    ctx.lineTo(ship.w / 2, ship.h / 2);
+    ctx.closePath();
+    ctx.fillStyle = "#3a7ec8";
+    ctx.fill();
+    ctx.strokeStyle = "#7ec8e3";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
 
-    for (const s of stars) {
-      s.y += s.speed;
-      if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
-      ctx.fillStyle = `rgba(200,200,255,${s.brightness * 0.6})`;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    if (state === 'playing' || state === 'dead') {
-      for (const a of asteroids) drawAsteroid(a);
-
-      if (state === 'playing') drawShip(ship.x, ship.y);
-
-      for (const p of particles) {
-        const alpha = p.life / p.maxLife;
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = alpha;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-
-      if (nearMissFlash > 0) {
-        ctx.fillStyle = `rgba(255,215,0,${nearMissFlash * 0.15})`;
-        ctx.fillRect(0, 0, W, H);
-      }
-    }
+    // engine glow
+    const f = 3 + Math.random() * 4;
+    ctx.beginPath();
+    ctx.moveTo(-5, ship.h / 2 - 2);
+    ctx.lineTo(0, ship.h / 2 + f);
+    ctx.lineTo(5, ship.h / 2 - 2);
+    ctx.fillStyle = `rgba(126,200,227,${0.5 + Math.random() * 0.3})`;
+    ctx.fill();
+    ctx.restore();
   }
 
-  function gameLoop(timestamp) {
-    const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
-    lastTime = timestamp;
-
-    update(dt);
-    render();
-
-    hudScore.textContent = Math.round(score);
-    hudMisses.textContent = nearMisses;
-    hudTime.textContent = survivalTime.toFixed(1) + 's';
-
-    requestAnimationFrame(gameLoop);
+  // particles
+  for (const p of particles) {
+    const a = p.life / p.maxLife;
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = a;
+    ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3);
   }
+  ctx.globalAlpha = 1;
+}
 
-  function startGame() {
-    state = 'playing';
-    ship = { x: W / 2, y: H - 60 };
-    asteroids = [];
-    particles = [];
-    score = 0;
-    nearMisses = 0;
-    survivalTime = 0;
-    spawnTimer = 1;
-    saving = false;
-    scoreSaved = false;
-    nearMissFlash = 0;
-    overlay.classList.add('hidden');
-    errorMsg.textContent = '';
-    canvas.focus();
-  }
+function loop(last) {
+  if (gameState !== "playing") return;
+  const now = performance.now();
+  const dt = Math.min((now - last) / 1000, 0.05);
+  update(dt);
+  draw();
+  animId = requestAnimationFrame(() => loop(now));
+}
 
-  function endGame() {
-    state = 'dead';
-    const finalScore = Math.round(score);
-    overlayTitle.textContent = 'GAME OVER';
-    finalScoreEl.textContent = finalScore + ' pts';
-    finalScoreEl.classList.remove('hidden');
-    finalDetailEl.textContent = `${survivalTime.toFixed(1)}s survived · ${nearMisses} near misses`;
-    finalDetailEl.classList.remove('hidden');
-    nameInput.classList.remove('hidden');
-    nameInput.value = '';
-    btnStart.classList.add('hidden');
-    btnSave.classList.remove('hidden');
-    btnSave.disabled = false;
-    btnRestart.classList.remove('hidden');
-    startHelp.classList.add('hidden');
-    overlay.classList.remove('hidden');
-    errorMsg.textContent = '';
-    nameInput.focus();
-  }
+function startGame() {
+  resetGame();
+  overlay.classList.add("hidden");
+  gameState = "playing";
+  draw();
+  loop(performance.now());
+}
 
-  async function saveScore() {
-    if (saving || scoreSaved) return;
-    const name = nameInput.value.trim();
-    if (!name) {
-      errorMsg.textContent = 'Please enter a name';
-      return;
-    }
-    if (name.length > 20) {
-      errorMsg.textContent = 'Name must be 20 characters or fewer';
-      return;
-    }
-
-    saving = true;
-    btnSave.disabled = true;
-    errorMsg.textContent = '';
-
-    try {
-      const res = await fetch('scores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name,
-          score: Math.round(score),
-          near_misses: nearMisses,
-          survival_secs: Math.round(survivalTime * 10) / 10
-        })
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to save');
-      }
-      scoreSaved = true;
-      btnSave.textContent = 'SAVED';
-      nameInput.disabled = true;
-      loadScores();
-    } catch (e) {
-      errorMsg.textContent = e.message;
-      saving = false;
-      btnSave.disabled = false;
-    }
-  }
-
-  async function loadScores() {
-    try {
-      const res = await fetch('scores');
-      const data = await res.json();
-      if (data.length === 0) {
-        scoreList.innerHTML = '<li style="color:#556">No scores yet</li>';
-        return;
-      }
-      scoreList.innerHTML = data.map((s, i) =>
-        `<li><span class="rank">${i + 1}.</span><span class="sname">${escapeHtml(s.name)}</span><span class="sval">${s.score}</span></li>`
-      ).join('');
-    } catch (_) {
-      scoreList.innerHTML = '<li style="color:#f66">Failed to load</li>';
-    }
-  }
-
-  function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  document.addEventListener('keydown', (e) => {
-    keys[e.code] = true;
-    if (state === 'playing') {
-      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.code)) {
-        e.preventDefault();
-      }
-    }
-  });
-
-  document.addEventListener('keyup', (e) => {
-    keys[e.code] = false;
-  });
-
-  btnStart.addEventListener('click', () => startGame());
-  btnSave.addEventListener('click', () => saveScore());
-  btnRestart.addEventListener('click', () => {
-    btnSave.textContent = 'SAVE SCORE';
-    nameInput.disabled = false;
-    startGame();
-  });
-
-  nameInput.addEventListener('keydown', (e) => {
-    e.stopPropagation();
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (!scoreSaved && !saving) saveScore();
-    }
-  });
-
+function showDeath() {
+  cancelAnimationFrame(animId);
+  draw();
+  endScreen.classList.remove("hidden");
+  startScreen.classList.add("hidden");
+  overlay.classList.remove("hidden");
+  finalScoreEl.textContent = score;
+  finalDetails.textContent = `${crystalCount} crystals · ${elapsed.toFixed(1)}s survived`;
+  nameForm.classList.remove("hidden");
+  saveBtn.disabled = false;
   loadScores();
-  lastTime = performance.now();
-  requestAnimationFrame(gameLoop);
+}
+
+function showMenu() {
+  startScreen.classList.remove("hidden");
+  endScreen.classList.add("hidden");
+  overlay.classList.remove("hidden");
+  draw();
+  loadScores();
+}
+
+// API helpers — resolve relative to the page's own directory
+function apiBase() {
+  const loc = window.location.pathname;
+  const dir = loc.endsWith("/") ? loc : loc.substring(0, loc.lastIndexOf("/") + 1);
+  return dir;
+}
+
+async function loadScores() {
+  try {
+    const res = await fetch(apiBase() + "scores");
+    if (!res.ok) return;
+    const data = await res.json();
+    renderScores(data);
+  } catch (_) {}
+}
+
+function renderScores(data) {
+  scoreRows.innerHTML = "";
+  if (!data.length) {
+    scoreRows.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#445">No scores yet</td></tr>';
+    return;
+  }
+  data.forEach((row, i) => {
+    const tr = document.createElement("tr");
+    const ms = row.survived_ms;
+    const sec = (ms / 1000).toFixed(1);
+    tr.innerHTML = `<td>${i + 1}</td><td>${esc(row.name)}</td><td>${row.score}</td><td>${row.crystals}</td><td>${sec}s</td>`;
+    scoreRows.appendChild(tr);
+  });
+}
+
+function esc(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+nameForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (saving || saved) return;
+  const name = nameInput.value.trim();
+  if (!name) {
+    saveMsg.textContent = "Enter a callsign";
+    saveMsg.className = "error";
+    return;
+  }
+  saving = true;
+  saveBtn.disabled = true;
+  saveMsg.textContent = "Saving...";
+  saveMsg.className = "";
+
+  try {
+    const res = await fetch(apiBase() + "scores", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        score,
+        crystals: crystalCount,
+        survived_ms: Math.round(elapsed * 1000)
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: "Save failed" }));
+      throw new Error(err.error || "Save failed");
+    }
+    saved = true;
+    saveMsg.textContent = "Score saved!";
+    saveMsg.className = "ok";
+    nameForm.classList.add("hidden");
+    loadScores();
+  } catch (err) {
+    saveMsg.textContent = err.message;
+    saveMsg.className = "error";
+    saving = false;
+    saveBtn.disabled = false;
+  }
+});
+
+document.getElementById("play-btn").addEventListener("click", startGame);
+document.getElementById("play-btn-2").addEventListener("click", startGame);
+
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT" || e.target.isContentEditable) return;
+  keys[e.code] = true;
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) {
+    e.preventDefault();
+  }
+});
+document.addEventListener("keyup", (e) => {
+  keys[e.code] = false;
+});
+
+showMenu();
 })();
 </script>
 </body>

@@ -1,67 +1,68 @@
-# Stellar Drift
+# Void Drifter
 
-A compact browser game where you pilot a ship through an asteroid field. Dodge debris, earn points for survival and near-misses, and compete on the persistent high-score table.
+A compact browser game where you pilot a ship through an endless asteroid field, dodging rocks and collecting energy crystals. One hit ends the run.
 
-## How to Run
+## How to play
+
+- **Arrow keys** or **WASD** to move your ship
+- **Dodge asteroids** — they drift down and accelerate over time
+- **Collect yellow crystals** for bonus points
+- **One collision** ends the round
+
+## How scoring works
+
+Score is earned two ways during a run:
+
+- **Survival time**: 10 points per second survived
+- **Crystals collected**: 100 points per crystal
+
+Final score = `floor(seconds_survived × 10) + (crystals × 100)`
+
+Difficulty ramps over time: asteroids spawn faster and move quicker, so longer survival requires sharper reflexes. Crystals are worth more than passive survival time, rewarding active risk-taking.
+
+## Setup and run
+
+Requires **Node.js 22**.
 
 ```bash
-npm install       # one-time setup
-npm start         # starts on port 3000 by default
+npm install --production
+PORT=3000 node server.js
 ```
 
-Set the `PORT` environment variable to use a different port:
+The server starts in the foreground on the specified port (default 3000). Open `http://localhost:3000` in a browser to play.
 
-```bash
-PORT=8080 npm start
-```
-
-Then open `http://127.0.0.1:<port>/` in your browser to play.
-
-The start command stays in the foreground and serves until killed.
-
-## How to Play
-
-- **Move**: Arrow keys (Left/Right) or A/D
-- **Goal**: Dodge falling asteroids as long as possible
-- **Scoring**:
-  - **+10 points per second** of survival
-  - **+50 points** for each near-miss (an asteroid that passes within 1.5× ship widths of you)
-- **End state**: A single collision ends the run
-- **Restart**: Click "PLAY AGAIN" after a run ends
-
-After a run, enter your name and save your score to the persistent leaderboard. Scores are stored in a SQLite database (`scores.db`) and survive server restarts.
+The `PORT` environment variable controls which port the server binds to.
 
 ## API
 
-| Method | Path     | Description          |
-|--------|----------|----------------------|
-| GET    | /scores  | Top 10 high scores   |
-| POST   | /scores  | Submit a new score   |
+### `GET /scores`
 
-### POST /scores body
+Returns the top 20 scores as a JSON array, ordered by score descending.
+
+### `POST /scores`
+
+Submit a score. Body (JSON):
 
 ```json
 {
   "name": "string (1-20 chars, required)",
-  "score": "number (0-999999, required)",
-  "near_misses": "number (>= 0, required)",
-  "survival_secs": "number (>= 0, required)"
+  "score": "integer 0-999999 (required)",
+  "crystals": "non-negative integer (required)",
+  "survived_ms": "non-negative integer (required)"
 }
 ```
 
-Invalid submissions receive a 400 response with an `error` field explaining the problem.
+Returns 201 on success, 400 with `{"error": "..."}` on validation failure.
 
-## Hosting Notes
+## Persistence
 
-- All page URLs are relative — works behind a reverse proxy with a path prefix.
-- No external CDN, fonts, or third-party scripts — fully self-contained.
-- No cookies, localStorage, or session storage — works in a CSP sandbox with an opaque origin.
-- CORS is enabled with preflight support for cross-origin embedding.
-- Form submission is handled via JavaScript `fetch` with `preventDefault()` — no native form navigation.
-- Score persistence uses SQLite on disk, not in-memory storage.
+Scores are stored in a SQLite database (`scores.db` in the project directory, or set `DB_PATH`). Data survives server restarts.
 
-## Tech Stack
+## Hosting notes
 
-- Node.js + Express (HTTP server, static files, API)
-- better-sqlite3 (durable score storage)
-- HTML5 Canvas (game rendering, no external dependencies)
+- All page URLs are relative — works behind a reverse proxy with a path prefix
+- No external CDN, web fonts, or third-party scripts
+- CORS enabled for cross-origin requests including JSON preflight
+- No cookies, localStorage, or session storage required
+- Form submission handled via JavaScript fetch (no native form navigation)
+- Controls respect focused inputs (keyboard shortcuts disabled when typing in the name field)
