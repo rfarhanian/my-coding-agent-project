@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stellar Drift</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a1a;
+  color: #e0e0ff;
+  font-family: 'Courier New', monospace;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+h1 {
+  font-size: 2rem;
+  margin: 12px 0 4px;
+  color: #7df9ff;
+  text-shadow: 0 0 20px rgba(125,249,255,0.5);
+  letter-spacing: 4px;
+}
+.subtitle {
+  font-size: 0.75rem;
+  color: #667;
+  margin-bottom: 8px;
+}
+#game-area {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 0 8px;
+}
+canvas {
+  border: 1px solid #223;
+  border-radius: 4px;
+  display: block;
+  background: #06060f;
+}
+#sidebar {
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.panel {
+  background: rgba(15,15,35,0.9);
+  border: 1px solid #223;
+  border-radius: 6px;
+  padding: 12px;
+}
+.panel h2 {
+  font-size: 0.85rem;
+  color: #7df9ff;
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  padding: 2px 0;
+}
+.stat-val { color: #ffd700; }
+#score-list {
+  list-style: none;
+  font-size: 0.75rem;
+}
+#score-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  border-bottom: 1px solid #1a1a30;
+}
+#score-list li .rank { color: #556; width: 20px; }
+#score-list li .sname { color: #aaf; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#score-list li .sval { color: #ffd700; margin-left: 8px; }
+
+#overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 480px; height: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6,6,15,0.92);
+  border-radius: 4px;
+  z-index: 10;
+}
+#overlay.hidden { display: none; }
+#overlay h2 {
+  font-size: 1.5rem;
+  color: #7df9ff;
+  margin-bottom: 16px;
+  text-shadow: 0 0 12px rgba(125,249,255,0.4);
+}
+#overlay .final-score {
+  font-size: 2rem;
+  color: #ffd700;
+  margin-bottom: 6px;
+}
+#overlay .final-detail {
+  font-size: 0.8rem;
+  color: #99a;
+  margin-bottom: 16px;
+}
+#overlay input {
+  background: #111;
+  border: 1px solid #334;
+  color: #eef;
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 8px 12px;
+  border-radius: 4px;
+  width: 200px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+#overlay input:focus { outline: none; border-color: #7df9ff; }
+#overlay .btn {
+  background: #1a1a3a;
+  color: #7df9ff;
+  border: 1px solid #334;
+  padding: 8px 24px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 4px;
+  letter-spacing: 1px;
+}
+#overlay .btn:hover { background: #252550; }
+#overlay .btn:disabled { opacity: 0.4; cursor: default; }
+#overlay .btn-row { display: flex; gap: 8px; margin-top: 4px; }
+#overlay .error-msg { color: #f66; font-size: 0.8rem; min-height: 1.2em; margin-top: 4px; }
+#overlay .start-help {
+  font-size: 0.75rem;
+  color: #667;
+  margin-top: 20px;
+  text-align: center;
+  line-height: 1.6;
+}
+</style>
+</head>
+<body>
+<h1>STELLAR DRIFT</h1>
+<p class="subtitle">dodge the debris &middot; chase the near-miss</p>
+<div id="game-area">
+  <canvas id="c" width="480" height="600"></canvas>
+  <div id="sidebar">
+    <div class="panel">
+      <h2>CURRENT RUN</h2>
+      <div class="stat-row"><span>Score</span><span class="stat-val" id="hud-score">0</span></div>
+      <div class="stat-row"><span>Near misses</span><span class="stat-val" id="hud-misses">0</span></div>
+      <div class="stat-row"><span>Time</span><span class="stat-val" id="hud-time">0.0s</span></div>
+    </div>
+    <div class="panel">
+      <h2>HOW TO PLAY</h2>
+      <p style="font-size:0.7rem;color:#99a;line-height:1.5;">
+        Move your ship left/right to dodge falling asteroids.<br><br>
+        <b style="color:#aaf;">Arrow keys</b> or <b style="color:#aaf;">A/D</b> to move.<br><br>
+        <b style="color:#ffd700;">+10 pts/sec</b> for surviving.<br>
+        <b style="color:#ff6060;">+50 pts</b> per near-miss (asteroid passes within one ship-width).
+        <br><br>Difficulty increases over time. One hit ends the run.
+      </p>
+    </div>
+    <div class="panel">
+      <h2>HIGH SCORES</h2>
+      <ul id="score-list"><li style="color:#556">Loading...</li></ul>
+    </div>
+  </div>
+
+  <div id="overlay">
+    <h2 id="overlay-title">STELLAR DRIFT</h2>
+    <div class="final-score hidden" id="final-score"></div>
+    <div class="final-detail hidden" id="final-detail"></div>
+    <input type="text" id="name-input" class="hidden" maxlength="20" placeholder="Enter your name">
+    <div class="btn-row">
+      <button class="btn" id="btn-start">START</button>
+      <button class="btn hidden" id="btn-save">SAVE SCORE</button>
+      <button class="btn hidden" id="btn-restart">PLAY AGAIN</button>
+    </div>
+    <div class="error-msg" id="error-msg"></div>
+    <div class="start-help" id="start-help">Arrow keys or A/D to move &middot; dodge everything</div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  const hudScore = document.getElementById('hud-score');
+  const hudMisses = document.getElementById('hud-misses');
+  const hudTime = document.getElementById('hud-time');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const finalScoreEl = document.getElementById('final-score');
+  const finalDetailEl = document.getElementById('final-detail');
+  const nameInput = document.getElementById('name-input');
+  const btnStart = document.getElementById('btn-start');
+  const btnSave = document.getElementById('btn-save');
+  const btnRestart = document.getElementById('btn-restart');
+  const errorMsg = document.getElementById('error-msg');
+  const startHelp = document.getElementById('start-help');
+  const scoreList = document.getElementById('score-list');
+
+  const SHIP_W = 28, SHIP_H = 32;
+  const NEAR_MISS_DIST = SHIP_W * 1.5;
+
+  let state = 'menu';
+  let ship = { x: W / 2, y: H - 60 };
+  let asteroids = [];
+  let stars = [];
+  let particles = [];
+  let score = 0;
+  let nearMisses = 0;
+  let survivalTime = 0;
+  let lastTime = 0;
+  let spawnTimer = 0;
+  let keys = {};
+  let saving = false;
+  let scoreSaved = false;
+  let nearMissFlash = 0;
+
+  for (let i = 0; i < 80; i++) {
+    stars.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      speed: 0.2 + Math.random() * 0.6,
+      size: Math.random() < 0.3 ? 1.5 : 0.8,
+      brightness: 0.3 + Math.random() * 0.7
+    });
+  }
+
+  function spawnAsteroid() {
+    const size = 12 + Math.random() * 22;
+    const speedMult = 1 + survivalTime / 30;
+    asteroids.push({
+      x: Math.random() * (W - size * 2) + size,
+      y: -size,
+      size: size,
+      speed: (1.5 + Math.random() * 2) * Math.min(speedMult, 4),
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.05,
+      vertices: generateAsteroidShape(size),
+      scored: false
+    });
+  }
+
+  function generateAsteroidShape(size) {
+    const pts = 7 + Math.floor(Math.random() * 5);
+    const verts = [];
+    for (let i = 0; i < pts; i++) {
+      const angle = (i / pts) * Math.PI * 2;
+      const r = size * (0.7 + Math.random() * 0.3);
+      verts.push({ x: Math.cos(angle) * r, y: Math.sin(angle) * r });
+    }
+    return verts;
+  }
+
+  function spawnParticles(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1 + Math.random() * 3;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 0.5 + Math.random() * 0.5,
+        maxLife: 0.5 + Math.random() * 0.5,
+        color,
+        size: 1 + Math.random() * 2
+      });
+    }
+  }
+
+  function drawShip(x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+
+    ctx.shadowColor = '#7df9ff';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.moveTo(0, -SHIP_H / 2);
+    ctx.lineTo(-SHIP_W / 2, SHIP_H / 2);
+    ctx.lineTo(-4, SHIP_H / 3);
+    ctx.lineTo(4, SHIP_H / 3);
+    ctx.lineTo(SHIP_W / 2, SHIP_H / 2);
+    ctx.closePath();
+    ctx.fillStyle = '#1a3a5c';
+    ctx.fill();
+    ctx.strokeStyle = '#7df9ff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    ctx.beginPath();
+    ctx.moveTo(-3, SHIP_H / 3 + 2);
+    ctx.lineTo(0, SHIP_H / 2 + 6 + Math.random() * 4);
+    ctx.lineTo(3, SHIP_H / 3 + 2);
+    ctx.fillStyle = `rgba(255,${150 + Math.random()*100},50,0.8)`;
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawAsteroid(a) {
+    ctx.save();
+    ctx.translate(a.x, a.y);
+    ctx.rotate(a.rotation);
+    ctx.beginPath();
+    ctx.moveTo(a.vertices[0].x, a.vertices[0].y);
+    for (let i = 1; i < a.vertices.length; i++) {
+      ctx.lineTo(a.vertices[i].x, a.vertices[i].y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = '#2a2a3a';
+    ctx.fill();
+    ctx.strokeStyle = '#556';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function update(dt) {
+    if (state !== 'playing') return;
+
+    const speed = 300;
+    if (keys['ArrowLeft'] || keys['KeyA']) ship.x -= speed * dt;
+    if (keys['ArrowRight'] || keys['KeyD']) ship.x += speed * dt;
+    ship.x = Math.max(SHIP_W / 2, Math.min(W - SHIP_W / 2, ship.x));
+
+    survivalTime += dt;
+    score += 10 * dt;
+
+    spawnTimer -= dt;
+    const spawnRate = Math.max(0.15, 0.8 - survivalTime / 60);
+    if (spawnTimer <= 0) {
+      spawnAsteroid();
+      spawnTimer = spawnRate;
+    }
+
+    for (let i = asteroids.length - 1; i >= 0; i--) {
+      const a = asteroids[i];
+      a.y += a.speed;
+      a.rotation += a.rotSpeed;
+
+      const dx = a.x - ship.x;
+      const dy = a.y - ship.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const hitDist = a.size * 0.6 + SHIP_W * 0.4;
+
+      if (dist < hitDist) {
+        spawnParticles(ship.x, ship.y, '#7df9ff', 20);
+        spawnParticles(ship.x, ship.y, '#ff6040', 15);
+        endGame();
+        return;
+      }
+
+      if (!a.scored && a.y > ship.y + SHIP_H) {
+        a.scored = true;
+        if (dist < NEAR_MISS_DIST + a.size) {
+          nearMisses++;
+          score += 50;
+          nearMissFlash = 0.3;
+          spawnParticles(ship.x, ship.y - 10, '#ffd700', 6);
+        }
+      }
+
+      if (a.y > H + a.size) {
+        asteroids.splice(i, 1);
+      }
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life -= dt;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    if (nearMissFlash > 0) nearMissFlash -= dt;
+  }
+
+  function render() {
+    ctx.fillStyle = '#06060f';
+    ctx.fillRect(0, 0, W, H);
+
+    for (const s of stars) {
+      s.y += s.speed;
+      if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
+      ctx.fillStyle = `rgba(200,200,255,${s.brightness * 0.6})`;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (state === 'playing' || state === 'dead') {
+      for (const a of asteroids) drawAsteroid(a);
+
+      if (state === 'playing') drawShip(ship.x, ship.y);
+
+      for (const p of particles) {
+        const alpha = p.life / p.maxLife;
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      if (nearMissFlash > 0) {
+        ctx.fillStyle = `rgba(255,215,0,${nearMissFlash * 0.15})`;
+        ctx.fillRect(0, 0, W, H);
+      }
+    }
+  }
+
+  function gameLoop(timestamp) {
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+    lastTime = timestamp;
+
+    update(dt);
+    render();
+
+    hudScore.textContent = Math.round(score);
+    hudMisses.textContent = nearMisses;
+    hudTime.textContent = survivalTime.toFixed(1) + 's';
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  function startGame() {
+    state = 'playing';
+    ship = { x: W / 2, y: H - 60 };
+    asteroids = [];
+    particles = [];
+    score = 0;
+    nearMisses = 0;
+    survivalTime = 0;
+    spawnTimer = 1;
+    saving = false;
+    scoreSaved = false;
+    nearMissFlash = 0;
+    overlay.classList.add('hidden');
+    errorMsg.textContent = '';
+    canvas.focus();
+  }
+
+  function endGame() {
+    state = 'dead';
+    const finalScore = Math.round(score);
+    overlayTitle.textContent = 'GAME OVER';
+    finalScoreEl.textContent = finalScore + ' pts';
+    finalScoreEl.classList.remove('hidden');
+    finalDetailEl.textContent = `${survivalTime.toFixed(1)}s survived · ${nearMisses} near misses`;
+    finalDetailEl.classList.remove('hidden');
+    nameInput.classList.remove('hidden');
+    nameInput.value = '';
+    btnStart.classList.add('hidden');
+    btnSave.classList.remove('hidden');
+    btnSave.disabled = false;
+    btnRestart.classList.remove('hidden');
+    startHelp.classList.add('hidden');
+    overlay.classList.remove('hidden');
+    errorMsg.textContent = '';
+    nameInput.focus();
+  }
+
+  async function saveScore() {
+    if (saving || scoreSaved) return;
+    const name = nameInput.value.trim();
+    if (!name) {
+      errorMsg.textContent = 'Please enter a name';
+      return;
+    }
+    if (name.length > 20) {
+      errorMsg.textContent = 'Name must be 20 characters or fewer';
+      return;
+    }
+
+    saving = true;
+    btnSave.disabled = true;
+    errorMsg.textContent = '';
+
+    try {
+      const res = await fetch('scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name,
+          score: Math.round(score),
+          near_misses: nearMisses,
+          survival_secs: Math.round(survivalTime * 10) / 10
+        })
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to save');
+      }
+      scoreSaved = true;
+      btnSave.textContent = 'SAVED';
+      nameInput.disabled = true;
+      loadScores();
+    } catch (e) {
+      errorMsg.textContent = e.message;
+      saving = false;
+      btnSave.disabled = false;
+    }
+  }
+
+  async function loadScores() {
+    try {
+      const res = await fetch('scores');
+      const data = await res.json();
+      if (data.length === 0) {
+        scoreList.innerHTML = '<li style="color:#556">No scores yet</li>';
+        return;
+      }
+      scoreList.innerHTML = data.map((s, i) =>
+        `<li><span class="rank">${i + 1}.</span><span class="sname">${escapeHtml(s.name)}</span><span class="sval">${s.score}</span></li>`
+      ).join('');
+    } catch (_) {
+      scoreList.innerHTML = '<li style="color:#f66">Failed to load</li>';
+    }
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  document.addEventListener('keydown', (e) => {
+    keys[e.code] = true;
+    if (state === 'playing') {
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.code)) {
+        e.preventDefault();
+      }
+    }
+  });
+
+  document.addEventListener('keyup', (e) => {
+    keys[e.code] = false;
+  });
+
+  btnStart.addEventListener('click', () => startGame());
+  btnSave.addEventListener('click', () => saveScore());
+  btnRestart.addEventListener('click', () => {
+    btnSave.textContent = 'SAVE SCORE';
+    nameInput.disabled = false;
+    startGame();
+  });
+
+  nameInput.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (!scoreSaved && !saving) saveScore();
+    }
+  });
+
+  loadScores();
+  lastTime = performance.now();
+  requestAnimationFrame(gameLoop);
+})();
+</script>
+</body>
+</html>

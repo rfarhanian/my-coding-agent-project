@@ -1,35 +1,67 @@
-# my-coding-agent-project
+# Stellar Drift
 
-A lightweight training project for exploring AWS Bedrock and core agent workflows.
+A compact browser game where you pilot a ship through an asteroid field. Dodge debris, earn points for survival and near-misses, and compete on the persistent high-score table.
 
-## Overview
+## How to Run
 
-This repository is intended as a practical learning and experimentation space for:
+```bash
+npm install       # one-time setup
+npm start         # starts on port 3000 by default
+```
 
-- AWS Bedrock-based application development
-- Core agent patterns and orchestration
-- Tool calling and prompt-driven workflows
-- Prototyping AI-powered application logic
+Set the `PORT` environment variable to use a different port:
 
-## Repository Details
+```bash
+PORT=8080 npm start
+```
 
-- Project name: my-coding-agent-project
-- Description: AWS bedrock coreagent training project
-- Default branch: main
-- Visibility: public
-- Repository status: starter/training project
+Then open `http://127.0.0.1:<port>/` in your browser to play.
 
-## Language Composition
+The start command stays in the foreground and serves until killed.
 
-This repository does not currently report any detected source-language breakdown, which is typical for a newly created or minimal project scaffold.
+## How to Play
 
-## Getting Started
+- **Move**: Arrow keys (Left/Right) or A/D
+- **Goal**: Dodge falling asteroids as long as possible
+- **Scoring**:
+  - **+10 points per second** of survival
+  - **+50 points** for each near-miss (an asteroid that passes within 1.5× ship widths of you)
+- **End state**: A single collision ends the run
+- **Restart**: Click "PLAY AGAIN" after a run ends
 
-1. Clone the repository.
-2. Review the project structure and add the source files needed for your workload.
-3. Configure AWS credentials and any required Bedrock settings.
-4. Build and test your agent logic in a safe development environment.
+After a run, enter your name and save your score to the persistent leaderboard. Scores are stored in a SQLite database (`scores.db`) and survive server restarts.
 
-## Notes
+## API
 
-This README is intended as a starting point and can be expanded as the project grows.
+| Method | Path     | Description          |
+|--------|----------|----------------------|
+| GET    | /scores  | Top 10 high scores   |
+| POST   | /scores  | Submit a new score   |
+
+### POST /scores body
+
+```json
+{
+  "name": "string (1-20 chars, required)",
+  "score": "number (0-999999, required)",
+  "near_misses": "number (>= 0, required)",
+  "survival_secs": "number (>= 0, required)"
+}
+```
+
+Invalid submissions receive a 400 response with an `error` field explaining the problem.
+
+## Hosting Notes
+
+- All page URLs are relative — works behind a reverse proxy with a path prefix.
+- No external CDN, fonts, or third-party scripts — fully self-contained.
+- No cookies, localStorage, or session storage — works in a CSP sandbox with an opaque origin.
+- CORS is enabled with preflight support for cross-origin embedding.
+- Form submission is handled via JavaScript `fetch` with `preventDefault()` — no native form navigation.
+- Score persistence uses SQLite on disk, not in-memory storage.
+
+## Tech Stack
+
+- Node.js + Express (HTTP server, static files, API)
+- better-sqlite3 (durable score storage)
+- HTML5 Canvas (game rendering, no external dependencies)
