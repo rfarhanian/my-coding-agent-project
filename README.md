@@ -1,35 +1,68 @@
-# my-coding-agent-project
+# Void Drifter
 
-A lightweight training project for exploring AWS Bedrock and core agent workflows.
+A compact browser game where you pilot a ship through an endless asteroid field, dodging rocks and collecting energy crystals. One hit ends the run.
 
-## Overview
+## How to play
 
-This repository is intended as a practical learning and experimentation space for:
+- **Arrow keys** or **WASD** to move your ship
+- **Dodge asteroids** — they drift down and accelerate over time
+- **Collect yellow crystals** for bonus points
+- **One collision** ends the round
 
-- AWS Bedrock-based application development
-- Core agent patterns and orchestration
-- Tool calling and prompt-driven workflows
-- Prototyping AI-powered application logic
+## How scoring works
 
-## Repository Details
+Score is earned two ways during a run:
 
-- Project name: my-coding-agent-project
-- Description: AWS bedrock coreagent training project
-- Default branch: main
-- Visibility: public
-- Repository status: starter/training project
+- **Survival time**: 10 points per second survived
+- **Crystals collected**: 100 points per crystal
 
-## Language Composition
+Final score = `floor(seconds_survived × 10) + (crystals × 100)`
 
-This repository does not currently report any detected source-language breakdown, which is typical for a newly created or minimal project scaffold.
+Difficulty ramps over time: asteroids spawn faster and move quicker, so longer survival requires sharper reflexes. Crystals are worth more than passive survival time, rewarding active risk-taking.
 
-## Getting Started
+## Setup and run
 
-1. Clone the repository.
-2. Review the project structure and add the source files needed for your workload.
-3. Configure AWS credentials and any required Bedrock settings.
-4. Build and test your agent logic in a safe development environment.
+Requires **Node.js 22**.
 
-## Notes
+```bash
+npm install --production
+PORT=3000 node server.js
+```
 
-This README is intended as a starting point and can be expanded as the project grows.
+The server starts in the foreground on the specified port (default 3000). Open `http://localhost:3000` in a browser to play.
+
+The `PORT` environment variable controls which port the server binds to.
+
+## API
+
+### `GET /scores`
+
+Returns the top 20 scores as a JSON array, ordered by score descending.
+
+### `POST /scores`
+
+Submit a score. Body (JSON):
+
+```json
+{
+  "name": "string (1-20 chars, required)",
+  "score": "integer 0-999999 (required)",
+  "crystals": "non-negative integer (required)",
+  "survived_ms": "non-negative integer (required)"
+}
+```
+
+Returns 201 on success, 400 with `{"error": "..."}` on validation failure.
+
+## Persistence
+
+Scores are stored in a SQLite database (`scores.db` in the project directory, or set `DB_PATH`). Data survives server restarts.
+
+## Hosting notes
+
+- All page URLs are relative — works behind a reverse proxy with a path prefix
+- No external CDN, web fonts, or third-party scripts
+- CORS enabled for cross-origin requests including JSON preflight
+- No cookies, localStorage, or session storage required
+- Form submission handled via JavaScript fetch (no native form navigation)
+- Controls respect focused inputs (keyboard shortcuts disabled when typing in the name field)
